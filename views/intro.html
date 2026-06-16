@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Habit Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/tailwind.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: { 500: '#10B981', 600: '#059669' },
+                        blue: { 500: '#5BA4C9', 600: '#0284C7' },
+                        navy: { 500: '#3B5998', 600: '#2B4078' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+            touch-action: pan-y;
+        }
+
+        .intro-container {
+            display: flex;
+            width: 200%;
+            height: 100vh;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .intro-slide {
+            width: 50%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Dot indicators */
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 100px;
+            background: #D1D5DB;
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .dot.active {
+            width: 28px;
+            background: #10B981;
+        }
+
+        /* Image container with rounded corners */
+        .intro-image-wrapper {
+            width: 260px;
+            height: 260px;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.15),
+                        0 0 0 1px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .intro-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .intro-image-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 32px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+        }
+
+        /* Button styles */
+        .intro-btn {
+            width: 100%;
+            max-width: 320px;
+            padding: 16px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intro-btn:active {
+            transform: scale(0.97);
+        }
+
+        .intro-btn-primary {
+            background: #10B981;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+        }
+
+        .intro-btn-primary:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.45);
+        }
+
+        .intro-btn-outline {
+            background: white;
+            color: #374151;
+            border: 2px solid #E5E7EB;
+        }
+
+        .intro-btn-outline:hover {
+            border-color: #10B981;
+            color: #10B981;
+            transform: translateY(-1px);
+        }
+
+        /* Decorative floating elements */
+        .float-element {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.07;
+            animation: floatBubble 6s ease-in-out infinite;
+        }
+
+        @keyframes floatBubble {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        /* Fade-in animation */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(24px);
+            animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .fade-up-delay-1 { animation-delay: 0.15s; }
+        .fade-up-delay-2 { animation-delay: 0.3s; }
+        .fade-up-delay-3 { animation-delay: 0.45s; }
+        .fade-up-delay-4 { animation-delay: 0.6s; }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Slide 2 icon container */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .icon-card {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .icon-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* Swipe hint animation */
+        .swipe-hint {
+            animation: swipeHint 2s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        @keyframes swipeHint {
+            0%, 100% { transform: translateX(0); opacity: 0.6; }
+            50% { transform: translateX(-8px); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Intro Slider Container -->
+    <div class="intro-container" id="intro-container">
+        
+        <!-- ======= SLIDE 1: Motivational Welcome ======= -->
+        <div class="intro-slide bg-white" id="slide-1">
+            <!-- Decorative floating elements -->
+            <div class="float-element bg-emerald-400" style="width: 120px; height: 120px; top: -30px; right: -20px; animation-delay: 0s;"></div>
+            <div class="float-element bg-emerald-300" style="width: 80px; height: 80px; bottom: 120px; left: -20px; animation-delay: 1.5s;"></div>
+            <div class="float-element bg-teal-300" style="width: 60px; height: 60px; top: 200px; right: 30px; animation-delay: 3s;"></div>
+
+            <div class="flex flex-col items-center px-8 relative z-10">
+                <!-- Image -->
+                <div class="intro-image-wrapper fade-up mb-10">
+                    <img src="../assets/intro.jpg" alt="Healthy Lifestyle" id="intro-img">
+                </div>
+
+                <!-- Title -->
+                <h1 class="text-2xl font-extrabold text-gray-900 text-center leading-tight fade-up fade-up-delay-1 mb-3">
+                    Bangun Kebiasaan Sehat,<br>Satu Langkah Setiap Hari
+                </h1>
+
+                <!-- Description -->
+                <p class="text-sm text-gray-500 text-center max-w-[300px] leading-relaxed fade-up fade-up-delay-2 mb-10">
+                    Lacak aktivitas harian, capai tujuan olahraga, dan wujudkan hidup sehat yang konsisten bersama Habit Tracker.
+                </p>
+
+                <!-- Dots + Button -->
+                <div class="flex flex-col items-center gap-8 w-full fade-up fade-up-delay-3">
+                    <!-- Pagination dots -->
+                    <div class="flex items-center gap-2">
+                        <div class="dot active" id="dot-0"></div>
+                        <div class="dot" id="dot-1"></div>
+                    </div>
+
+                    <!-- Get Started button (goes to slide 2) -->
+                    <button class="intro-btn intro-btn-primary" onclick="goToSlide(1)" id="btn-get-started">
+                        Mulai Sekarang
+                    </button>
+                </div>
+
+                <!-- Swipe hint -->
+                <div class="flex items-center gap-2 mt-6 text-gray-400 text-xs font-medium swipe-hint">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                    <span>Geser untuk lanjut</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======= SLIDE 2: Ready to Start ======= -->
+        <div class="intro-slide bg-white" id="slide-2">
+            <!-- Decorative floating elements -->
+            <div class="float-element bg-blue-300" style="width: 100px; height: 100px; top: 60px; left: -30px; animation-delay: 0.5s;"></div>
+            <div class="float-element bg-emerald-300" style="width: 70px; height: 70px; bottom: 180px; right: -10px; animation-delay: 2s;"></div>
+
+            <div class="flex flex-col items-center px-8 relative z-10">
+                <!-- Icon Grid -->
+                <div class="icon-grid mb-10" id="slide2-icons">
+                    <div class="icon-card bg-emerald-50 text-emerald-500">
+                        <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <div class="icon-card bg-blue-50 text-blue-500">
+                        <i class="fa-solid fa-glass-water"></i>
+                    </div>
+                    <div class="icon-card bg-orange-50 text-orange-500">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div class="icon-card bg-purple-50 text-purple-500">
+                        <i class="fa-solid fa-moon"></i>
+                    </div>
+                    <div class="icon-card bg-pink-50 text-pink-500">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <div class="icon-card bg-teal-50 text-teal-500">
+                        <i class="fa-solid fa-person-running"></i>
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <h1 class="text-2xl font-extrabold text-gray-900 text-center leading-tight mb-3">
+                    Siap Memulai<br>Perjalanan Barumu?
+                </h1>
+
+                <!-- Description -->
+                <p class="text-sm text-gray-500 text-center max-w-[300px] leading-relaxed mb-10">
+                    Buat akun atau masuk untuk mulai melacak kebiasaan sehatmu. Setiap hari adalah kesempatan baru!
+                </p>
+
+                <!-- Dots -->
+                <div class="flex items-center gap-2 mb-8">
+                    <div class="dot" id="dot-0b"></div>
+                    <div class="dot active" id="dot-1b"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col items-center gap-3 w-full max-w-[320px]">
+                    <a href="login.html" class="intro-btn intro-btn-primary text-center block w-full" id="btn-login" onclick="markIntroSeen()">
+                        <i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke Akun
+                    </a>
+                    <a href="register.html" class="intro-btn intro-btn-outline text-center block w-full" id="btn-register" onclick="markIntroSeen()">
+                        Buat Akun Baru
+                    </a>
+                </div>
+
+                <!-- Back link -->
+                <button onclick="goToSlide(0)" class="mt-6 text-gray-400 text-sm font-medium hover:text-emerald-500 transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    Kembali
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let currentSlide = 0;
+        const container = document.getElementById('intro-container');
+
+        // Check if intro already seen
+        if (localStorage.getItem('introSeen') === 'true') {
+            window.location.href = 'login.html';
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            container.style.transform = `translateX(-${index * 50}%)`;
+
+            // Update dots on slide 1
+            document.getElementById('dot-0').classList.toggle('active', index === 0);
+            document.getElementById('dot-1').classList.toggle('active', index === 1);
+
+            // Update dots on slide 2
+            document.getElementById('dot-0b').classList.toggle('active', index === 0);
+            document.getElementById('dot-1b').classList.toggle('active', index === 1);
+        }
+
+        function markIntroSeen() {
+            localStorage.setItem('introSeen', 'true');
+        }
+
+        // Touch swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        container.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const diff = touchStartX - touchEndX;
+            const threshold = 50;
+
+            if (diff > threshold && currentSlide < 1) {
+                goToSlide(currentSlide + 1);
+            } else if (diff < -threshold && currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && currentSlide < 1) goToSlide(currentSlide + 1);
+            if (e.key === 'ArrowLeft' && currentSlide > 0) goToSlide(currentSlide - 1);
+        });
+    </script>
+</body>
+</html>

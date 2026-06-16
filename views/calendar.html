@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar - Habit Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/tailwind.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: { 500: '#10B981', 100: '#D1FAE5' },
+                        blue: { 500: '#5BA4C9', 100: '#E0F2FE' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="pb-24 bg-gray-50">
+
+    <!-- Header -->
+    <header class="px-6 pt-8 pb-4 flex justify-between items-center animate-slide-up relative z-10">
+        <h1 class="text-2xl font-bold text-white">Calendar</h1>
+        <button class="w-10 h-10 rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition shadow-sm">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+        </button>
+    </header>
+
+    <!-- Month Navigation -->
+    <section class="px-6 flex justify-between items-center mt-2 animate-slide-up delay-100 relative z-10">
+        <button id="cal-prev" class="w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:bg-white/20 transition">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <h2 id="cal-month-title" class="text-lg font-bold text-white">April 2026</h2>
+        <button id="cal-next" class="w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:bg-white/20 transition">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </section>
+
+    <!-- Calendar Grid -->
+    <section class="px-6 mt-6 animate-slide-up delay-200">
+        <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+            <!-- Days of week -->
+            <div class="grid grid-cols-7 gap-2 mb-4 text-center">
+                <span class="text-xs font-bold text-gray-400">S</span>
+                <span class="text-xs font-bold text-gray-400">M</span>
+                <span class="text-xs font-bold text-gray-400">T</span>
+                <span class="text-xs font-bold text-gray-400">W</span>
+                <span class="text-xs font-bold text-gray-400">T</span>
+                <span class="text-xs font-bold text-gray-400">F</span>
+                <span class="text-xs font-bold text-gray-400">S</span>
+            </div>
+            
+            <!-- Dates -->
+            <div class="grid grid-cols-7 gap-y-4 gap-x-2 text-center" id="calendar-grid">
+                <!-- Javascript will populate this -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Selected Date Summary -->
+    <section class="px-6 mt-6 animate-slide-up delay-300">
+        <h3 class="text-lg font-bold text-gray-900 mb-4" id="selected-date-text">March 11, 2026</h3>
+        
+        <div id="calendar-habit-list" class="flex flex-col gap-3">
+            <!-- Dynamically populated by app.js -->
+        </div>
+    </section>
+
+    <!-- Tab Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-2 flex items-center justify-between z-50 shadow-[0_-4px_25px_rgba(0,0,0,0.05)] text-gray-400">
+        <a href="index.html" class="nav-item active:scale-90 transition-transform flex flex-col items-center gap-1 p-2 w-16">
+            <i class="fa-solid fa-house text-xl mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+        <a href="calendar.html" class="nav-item active:scale-90 transition-transform flex flex-col items-center gap-1 p-2 w-16 text-[var(--primary)] theme-text-update">
+            <i class="fa-regular fa-calendar text-xl mb-1"></i>
+            <span class="text-[10px] font-bold">Calendar</span>
+        </a>
+        
+        <div class="w-16 flex justify-center relative -top-6">
+            <a href="add_habit.html" class="w-14 h-14 bg-[var(--primary)] theme-bg-update rounded-full flex items-center justify-center text-white text-2xl shadow-[0_8px_20px_-6px_rgba(0,0,0,0.5)] transform transition hover:scale-105 active:scale-95 border-4 border-white">
+                <i class="fa-solid fa-plus"></i>
+            </a>
+        </div>
+        
+        <a href="statistics.html" class="nav-item active:scale-90 transition-transform flex flex-col items-center gap-1 p-2 w-16">
+            <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
+            <span class="text-[10px] font-medium">Stats</span>
+        </a>
+        <a href="profile.html" class="nav-item active:scale-90 transition-transform flex flex-col items-center gap-1 p-2 w-16">
+            <i class="fa-regular fa-user text-xl mb-1"></i>
+            <span class="text-[10px] font-medium">Profile</span>
+        </a>
+    </nav>
+
+    <script src="../js/habits.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        let calYear, calMonth, calSelectedDay;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            getLoginDate();
+            const now = new Date();
+            calYear = now.getFullYear();
+            calMonth = now.getMonth();
+            calSelectedDay = now.getDate();
+
+            // Sync habits from Supabase before rendering
+            await syncHabitsFromSupabase();
+            renderCalendarFull();
+
+            // Month navigation
+            document.getElementById('cal-prev').addEventListener('click', () => {
+                calMonth--;
+                if (calMonth < 0) { calMonth = 11; calYear--; }
+                calSelectedDay = null;
+                renderCalendarFull();
+            });
+            document.getElementById('cal-next').addEventListener('click', () => {
+                calMonth++;
+                if (calMonth > 11) { calMonth = 0; calYear++; }
+                calSelectedDay = null;
+                renderCalendarFull();
+            });
+
+            document.addEventListener('themeChanged', () => {
+                renderCalendarFull();
+            });
+        });
+
+        function renderCalendarFull() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'green';
+            const primaryColor = theme === 'blue' ? '#5BA4C9' : '#10B981';
+            const lightColor = theme === 'blue' ? '#E0F2FE' : '#D1FAE5';
+            const today = new Date();
+            const todayStr = today.toISOString().slice(0, 10);
+
+            // Month title
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            document.getElementById('cal-month-title').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+            // Calendar grid
+            const grid = document.getElementById('calendar-grid');
+            const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+            const habits = getHabits();
+            const completions = getCompletions();
+            const loginDate = getLoginDate();
+
+            let html = '';
+            // Empty cells
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div></div>';
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(calYear, calMonth, d);
+                const dateStr = dateObj.toISOString().slice(0, 10);
+                const isToday = dateStr === todayStr;
+                const isSelected = d === calSelectedDay;
+                const isPast = dateObj <= today;
+                const isFuture = dateStr > todayStr;
+
+                let classes = 'calendar-day w-8 h-8 rounded-full flex items-center justify-center mx-auto text-sm font-medium transition-all cursor-pointer hover:scale-110 relative';
+
+                let style = '';
+                if (isSelected) {
+                    classes += ' text-white shadow-md';
+                    style = `background-color: ${primaryColor};`;
+                } else if (isToday) {
+                    classes += ' text-white';
+                    style = `background-color: ${primaryColor}; opacity: 0.7;`;
+                } else if (isFuture) {
+                    classes += ' text-gray-400';
+                } else {
+                    classes += ' text-gray-700 bg-gray-50';
+                }
+
+                // Red dot for dates with incomplete habits
+                let dotHtml = '';
+                if (habits.length > 0 && dateStr >= loginDate && dateStr <= todayStr) {
+                    const allCompleted = habits.every(h => completions[dateStr] && completions[dateStr][h.id]);
+                    if (!allCompleted) {
+                        dotHtml = '<span class="cal-red-dot absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>';
+                    }
+                }
+
+                html += `<div class="${classes}" style="${style}" data-date="${dateStr}" data-day="${d}" onclick="selectCalDate(${d})">${d}${dotHtml}</div>`;
+            }
+
+            grid.innerHTML = html;
+
+            // Render selected date habits
+            if (calSelectedDay) {
+                const selDateStr = new Date(calYear, calMonth, calSelectedDay).toISOString().slice(0, 10);
+                const selDate = new Date(calYear, calMonth, calSelectedDay);
+                document.getElementById('selected-date-text').textContent = selDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                renderCalendarHabits(selDateStr);
+            } else {
+                document.getElementById('selected-date-text').textContent = `${monthNames[calMonth]} ${calYear}`;
+                document.getElementById('calendar-habit-list').innerHTML = `
+                    <div class="text-center py-6">
+                        <p class="text-gray-400 text-sm">Select a date to view habits</p>
+                    </div>`;
+            }
+        }
+
+        function selectCalDate(day) {
+            calSelectedDay = day;
+            renderCalendarFull();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root, [data-theme="light"] {
+  --primary: #10B981;
+  --primary-light: #D1FAE5;
+  --primary-dark: #059669;
+  --bg-color: #FAFAFA;
+  --card-bg: #FFFFFF;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --accent: #34D399;
+  --border-color: #E5E7EB;
+}
+
+[data-theme="dark"] {
+  --primary: #10B981;
+  --primary-light: #064E3B;
+  --primary-dark: #34D399;
+  --bg-color: #111827;
+  --card-bg: #1F2937;
+  --text-main: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --accent: #10B981;
+  --border-color: #374151;
+  --confirm-blue: #3B82F6;
+}
+
+html,
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: background-color 0.4s ease, color 0.4s ease;
+  overflow-x: hidden;
+  width: 100vw;
+  max-width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}

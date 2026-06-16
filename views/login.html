@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Habit Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/tailwind.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        green: { 500: '#10B981', 600: '#059669' },
+                        blue: { 500: '#5BA4C9', 600: '#0284C7' },
+                        navy: { 500: '#3B5998', 600: '#2B4078' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 flex items-center justify-center min-h-screen px-6">
+
+    <div
+        class="w-full max-w-md bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-slide-up relative overflow-hidden">
+
+        <!-- Decorative blob -->
+        <div class="absolute -top-16 -right-16 w-32 h-32 rounded-full opacity-10 theme-bg-update"
+            style="background-color: var(--primary);"></div>
+        <div class="absolute -bottom-16 -left-16 w-32 h-32 rounded-full opacity-10 theme-bg-update"
+            style="background-color: var(--primary);"></div>
+
+        <div class="text-center mb-8 relative z-10">
+            <div class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 theme-text-update theme-bg-light"
+                style="color: var(--primary); background-color: var(--primary-light);">
+                <i class="fa-solid fa-leaf"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">Welcome Back</h1>
+            <p class="text-sm text-gray-500 mt-1">Sign in to track your habits</p>
+        </div>
+
+        <form class="flex flex-col gap-4 relative z-10" id="login-form">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1" for="email">Email</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-regular fa-envelope text-gray-400"></i>
+                    </div>
+                    <input type="email" id="email"
+                        class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent theme-focus-ring transition"
+                        placeholder="you@example.com" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1 ml-1" for="password">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-lock text-gray-400"></i>
+                    </div>
+                    <input type="password" id="password"
+                        class="w-full pl-11 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent theme-focus-ring transition"
+                        placeholder="••••••••" required>
+                    <button type="button" onclick="togglePasswordVisibility('password', 'password-toggle-icon')"
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition">
+                        <i id="password-toggle-icon" class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
+                <div class="flex justify-end mt-2">
+                    <a href="#" onclick="handleForgotPassword(event)"
+                        class="text-sm font-semibold text-[var(--primary)] hover:underline">Forgot Password?</a>
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full py-3 mt-2 text-white font-bold rounded-xl shadow-md transform transition hover:-translate-y-0.5 active:translate-y-0 theme-bg-update"
+                style="background-color: var(--primary);">
+                Sign In
+            </button>
+        </form>
+
+        <!-- Google Auth Section (Hidden for now as requested)
+        <div class="mt-6 flex items-center relative z-10">
+            <div class="flex-grow border-t border-gray-200"></div>
+            <span class="flex-shrink-0 mx-4 text-xs font-medium text-gray-400">OR CONTINUE WITH</span>
+            <div class="flex-grow border-t border-gray-200"></div>
+        </div>
+
+        <button onclick="handleGoogleAuth()" class="relative z-10 mt-6 w-full py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="w-5 h-5">
+            Google
+        </button>
+        -->
+
+        <!-- Rate Limit Warning -->
+        <div id="rate-limit-warning"
+            class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 relative z-10 items-center gap-2"
+            style="display: none;"></div>
+
+        <p class="mt-8 text-center text-sm text-gray-600 relative z-10">
+            Don't have an account?
+            <a href="register.html" class="font-bold theme-text-update" style="color: var(--primary);">Sign Up</a>
+        </p>
+    </div>
+
+    <script src="../js/security.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply initial theme dynamically to style attributes
+            updateColors(document.documentElement.getAttribute('data-theme') || 'light');
+
+            document.addEventListener('themeChanged', (e) => {
+                updateColors(e.detail.theme);
+            });
+
+            document.getElementById('login-form').addEventListener('submit', handleEmailLogin);
+        });
+
+        function updateColors(theme) {
+            const primary = '#10B981';
+            const primaryLight = theme === 'dark' ? '#064E3B' : '#D1FAE5';
+
+            document.querySelectorAll('.theme-bg-update').forEach(el => el.style.backgroundColor = primary);
+            document.querySelectorAll('.theme-text-update').forEach(el => el.style.color = primary);
+            document.querySelectorAll('.theme-bg-light').forEach(el => el.style.backgroundColor = primaryLight);
+
+            // For focus ring (tailwind)
+            document.querySelectorAll('.theme-focus-ring').forEach(el => {
+                el.classList.remove('focus:ring-green-500', 'focus:ring-blue-500');
+                el.classList.add('focus:ring-green-500');
+            });
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = prompt("Enter your email address to receive a password reset link:");
+            if (!email || !email.trim()) return;
+            try {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim());
+                if (error) {
+                    showToast('Error: ' + error.message, 'error');
+                } else {
+                    showToast('Password reset link sent! Please check your email.', 'success');
+                }
+            } catch (err) {
+                showToast('Failed to send reset link. Please try again.', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>
