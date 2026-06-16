@@ -27,16 +27,62 @@
   --confirm-blue: #3B82F6;
 }
 
-html,
+html {
+  background-color: #FFFFFF; /* Pure white outer background */
+  min-height: 100vh;
+}
+
+[data-theme="dark"] html {
+  background-color: #111827;
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--bg-color);
+  background-color: #FFFFFF; /* Pure white main content background */
   color: var(--text-main);
   transition: background-color 0.4s ease, color 0.4s ease;
   overflow-x: hidden;
-  width: 100vw;
-  max-width: 100%;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  position: relative;
+  display: flex !important; /* Force flex */
+  flex-direction: row !important; /* Force row layout to ensure sidebar is on the left */
+  overflow: hidden;
+  transform: translateZ(0);
   -webkit-tap-highlight-color: transparent;
+}
+
+[data-theme="dark"] body {
+  background-color: #111827;
+}
+
+/* Sidebar Styles */
+.desktop-sidebar {
+  width: 100px !important;
+  height: 100vh;
+  background-color: #FFFFFF;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  padding: 0 0 2rem 0 !important; /* Removed top padding to eliminate space above */
+  border-right: 1px solid #F3F4F6; /* Divider for separation */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.01);
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .desktop-sidebar {
+  background-color: #1F2937;
+  border-right: 1px solid #374151;
+}
+
+.main-content-wrapper {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: transparent;
 }
 
 /* Animations */
@@ -452,4 +498,239 @@ input[type="number"].cal-num-input::-webkit-inner-spin-button {
 .theme-check-green,
 .theme-check-blue {
   animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Overrides for Full White Layout */
+
+/* Hide green/blue dynamic gradients completely */
+#theme-bg-gradient {
+  display: none !important;
+  background: none !important;
+  opacity: 0 !important;
+}
+
+/* Force layout cards & containers to be white with border/shadow on white background */
+.main-content-wrapper .bg-white\/50,
+.main-content-wrapper .bg-white\/60,
+.main-content-wrapper .bg-white\/80,
+#hero-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid #F3F4F6 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="dark"] .main-content-wrapper .bg-white\/50,
+[data-theme="dark"] .main-content-wrapper .bg-white\/60,
+[data-theme="dark"] .main-content-wrapper .bg-white\/80,
+[data-theme="dark"] #hero-card {
+  background-color: #1F2937 !important;
+  border: 1px solid #374151 !important;
+  box-shadow: none !important;
+}
+
+/* Habit card overrides to white background */
+.habit-card {
+  background-color: #FFFFFF !important;
+  color: #1F2937 !important;
+  border: 1px solid #F3F4F6 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="dark"] .habit-card {
+  background-color: #1F2937 !important;
+  color: #F9FAFB !important;
+  border: 1px solid #374151 !important;
+}
+
+/* Text color fixes for white/dark habit cards */
+.habit-card h3,
+.habit-card p,
+.habit-card span {
+  color: #1F2937 !important;
+}
+
+[data-theme="dark"] .habit-card h3,
+[data-theme="dark"] .habit-card p,
+[data-theme="dark"] .habit-card span {
+  color: #F9FAFB !important;
+}
+
+.habit-card .text-white\/90,
+.habit-card p.text-white\/90 {
+  color: #6B7280 !important;
+}
+
+[data-theme="dark"] .habit-card .text-white\/90,
+[data-theme="dark"] .habit-card p.text-white\/90 {
+  color: #9CA3AF !important;
+}
+
+.habit-card .timer-display {
+  color: #4B5563 !important;
+}
+
+[data-theme="dark"] .habit-card .timer-display {
+  color: #D1D5DB !important;
+}
+
+/* Habit icon circle on white card: light gray background, dark icon */
+.habit-card .shrink-0.w-10.h-10 {
+  background-color: #F3F4F6 !important;
+  color: #4B5563 !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"] .habit-card .shrink-0.w-10.h-10 {
+  background-color: #374151 !important;
+  color: #D1D5DB !important;
+}
+
+/* 3-dots menu button inside white card */
+.habit-card .home-delete span {
+  background-color: #9CA3AF !important;
+}
+
+[data-theme="dark"] .habit-card .home-delete span {
+  background-color: #6B7280 !important;
+}
+
+/* Toggle Switch styling for check-btn */
+.check-btn {
+  width: 52px !important;
+  height: 28px !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  position: relative !important;
+  background-color: #D1D5DB !important; /* gray when unchecked */
+  transition: background-color 0.2s ease !important;
+  cursor: pointer;
+  padding: 0 !important;
+}
+
+[data-theme="dark"] .check-btn {
+  background-color: #4B5563 !important;
+}
+
+/* The knob */
+.check-btn::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 4px !important;
+  left: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform: translateX(0) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 10px !important;
+}
+
+/* Hide the inner check icon */
+.check-btn i {
+  display: none !important;
+}
+
+/* Checked state */
+.check-btn.bg-white {
+  background-color: #10B981 !important; /* green when checked */
+}
+
+[data-theme="blue"] .check-btn.bg-white {
+  background-color: #5BA4C9 !important; /* blue when checked */
+}
+
+.check-btn.bg-white::after {
+  content: '\f00c' !important; /* FontAwesome check icon */
+  font-family: 'Font Awesome 6 Free' !important;
+  font-weight: 900 !important;
+  color: #10B981 !important;
+  transform: translateX(24px) !important;
+}
+
+[data-theme="blue"] .check-btn.bg-white::after {
+  color: #5BA4C9 !important;
+}
+
+/* Timer button on white card */
+.home-timer-btn {
+  border-color: #D1D5DB !important;
+  color: #4B5563 !important;
+  background-color: transparent !important;
+}
+.home-timer-btn:hover {
+  background-color: #F3F4F6 !important;
+}
+.home-timer-btn.bg-white {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] .home-timer-btn {
+  border-color: #4B5563 !important;
+  color: #D1D5DB !important;
+}
+[data-theme="dark"] .home-timer-btn.bg-white {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+
+/* Numeric buttons on white card */
+.numeric-plus, .numeric-minus {
+  border-color: #D1D5DB !important;
+  color: #4B5563 !important;
+  background-color: transparent !important;
+}
+.numeric-plus:hover, .numeric-minus:hover {
+  background-color: #F3F4F6 !important;
+}
+.habit-card .w-9.h-9.border-2 {
+  border-color: #D1D5DB !important;
+  color: #1F2937 !important;
+}
+.habit-card .w-9.h-9.border-2.bg-white {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+.habit-card .numeric-input {
+  color: inherit !important;
+}
+
+[data-theme="dark"] .numeric-plus, 
+[data-theme="dark"] .numeric-minus {
+  border-color: #4B5563 !important;
+  color: #D1D5DB !important;
+}
+[data-theme="dark"] .habit-card .w-9.h-9.border-2 {
+  border-color: #4B5563 !important;
+  color: #F9FAFB !important;
+}
+
+/* Select mode rings and selections */
+.sel-circle {
+  border-color: #D1D5DB !important;
+}
+.sel-circle.bg-white {
+  background-color: var(--primary) !important;
+}
+.sel-circle.bg-white i {
+  color: white !important;
+}
+
+/* Sidebar Active Nav Overrides for light green and light blue themes */
+.desktop-sidebar a.bg-\[\#C6F2DE\] {
+  background-color: #E6FDF4 !important; /* light green active bg */
+  color: #059669 !important;
+}
+
+[data-theme="blue"] .desktop-sidebar a.bg-\[\#C6F2DE\] {
+  background-color: #F0F9FF !important; /* light blue active bg */
+  color: #0284C7 !important;
 }

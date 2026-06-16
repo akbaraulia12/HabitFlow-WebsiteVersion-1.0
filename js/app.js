@@ -60,11 +60,11 @@ function updateGradientColor(theme) {
     const bgGradient = document.getElementById('theme-bg-gradient');
     if (bgGradient) {
          if (theme === 'dark') {
-             bgGradient.style.background = 'linear-gradient(180deg, #064E3B 0%, #111827 50%, rgba(255,255,255,0) 100%)'; 
+             bgGradient.style.background = 'linear-gradient(180deg, #111827 0%, rgba(17,24,39,0) 100%)'; 
          } else if (theme === 'blue') {
-             bgGradient.style.background = 'linear-gradient(180deg, #4480ba 0%, #acc9e6 50%, rgba(255,255,255,0) 100%)';
+             bgGradient.style.background = 'linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0) 100%)';
          } else {
-             bgGradient.style.background = 'linear-gradient(180deg, #10B981 0%, #6ee7b7 50%, rgba(255,255,255,0) 100%)';
+             bgGradient.style.background = 'linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0) 100%)';
          }
     }
 }
