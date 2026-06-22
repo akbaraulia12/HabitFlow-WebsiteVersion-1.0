@@ -93,50 +93,33 @@ function formatTime(totalSeconds) {
     return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-// --- Supabase Upsert for habit_logs ---
+// --- Upsert for habit_logs ---
 async function upsertHabitLog(habitId, dateStr, fields) {
-    const client = getClient();
-    if (!client) return;
+    if (!window.apiClient) return;
     try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) return;
-
-        const payload = {
-            user_id: session.user.id,
+        await window.apiClient.post('/habits/log', {
             habit_id: habitId,
             log_date: dateStr,
-            updated_at: new Date().toISOString(),
             ...fields
-        };
-
-        await client.from('habit_logs').upsert(payload, {
-            onConflict: 'habit_id,log_date'
         });
     } catch (err) {
         console.error('habit_logs upsert error:', err);
     }
 }
 
-// --- Supabase Sync: Fetch habits and logs on page load ---
-async function syncHabitsFromSupabase() {
-    const client = getClient();
-    if (!client) return;
+// --- API Sync: Fetch habits and logs on page load ---
+async function syncHabitsFromAPI() {
+    if (!window.apiClient) return;
 
     try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) return;
-
-        // Fetch habits from user_habits
-        const { data: habits, error } = await client
-            .from('user_habits')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: true });
-
+        const { data, error } = await window.apiClient.get('/habits');
         if (error) {
             console.error('Error fetching habits:', error);
             return;
         }
+
+        const habits = data.habits;
+        const logs = data.logs;
 
         // Transform to app format and cache in localStorage
         const appHabits = (habits || []).map(h => ({
@@ -152,28 +135,17 @@ async function syncHabitsFromSupabase() {
 
         saveHabitsCache(appHabits);
 
-        // Fetch habit_logs for completions
-        const { data: logs, error: logsError } = await client
-            .from('habit_logs')
-            .select('*')
-            .eq('user_id', session.user.id);
-
-        if (logsError) {
-            console.error('Error fetching habit logs:', logsError);
-            return;
-        }
-
         // Build completions, numeric values, and timer elapsed from logs
         const completions = {};
         const numericValues = {};
         const timerStates = getTimerStates(); // preserve running state
 
         (logs || []).forEach(log => {
-            const dateStr = log.log_date;
+            const dateStr = log.log_date.split('T')[0]; // Handle MySQL Date format
             if (!completions[dateStr]) completions[dateStr] = {};
             if (!numericValues[dateStr]) numericValues[dateStr] = {};
 
-            completions[dateStr][log.habit_id] = log.completed;
+            completions[dateStr][log.habit_id] = !!log.completed;
 
             if (log.numeric_value > 0) {
                 numericValues[dateStr][log.habit_id] = log.numeric_value;
@@ -197,21 +169,16 @@ async function syncHabitsFromSupabase() {
 
         return appHabits;
     } catch (err) {
-        console.error('syncHabitsFromSupabase error:', err);
+        console.error('syncHabitsFromAPI error:', err);
     }
 }
 
-// --- Add habit to Supabase (returns the Supabase UUID) ---
-async function addHabitToSupabase(habitData) {
-    const client = getClient();
-    if (!client) return null;
+// --- Add habit to API (returns the UUID) ---
+async function addHabitToAPI(habitData) {
+    if (!window.apiClient) return null;
 
     try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) return null;
-
-        const { data, error } = await client.from('user_habits').insert({
-            user_id: session.user.id,
+        const { data, error } = await window.apiClient.post('/habits', {
             name: habitData.name,
             goals: habitData.goals,
             description: habitData.description,
@@ -219,59 +186,47 @@ async function addHabitToSupabase(habitData) {
             icon_html: habitData.iconHtml,
             evaluation: habitData.evaluation,
             unit: habitData.unit || ''
-        }).select('id').single();
+        });
 
         if (error) {
-            console.error('Supabase habit insert error:', error);
+            console.error('API habit insert error:', error);
             return null;
         }
 
-        return data.id; // Return the Supabase UUID
+        return data.id; // Return the UUID
     } catch (err) {
-        console.error('addHabitToSupabase error:', err);
+        console.error('addHabitToAPI error:', err);
         return null;
     }
 }
 
-// --- Update habit in Supabase ---
-async function updateHabitInSupabase(habitId, habitData) {
-    const client = getClient();
-    if (!client) return;
+// --- Update habit in API ---
+async function updateHabitInAPI(habitId, habitData) {
+    if (!window.apiClient) return;
 
     try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) return;
-
-        await client.from('user_habits').update({
+        await window.apiClient.put(`/habits/${habitId}`, {
             name: habitData.name,
             goals: habitData.goals,
             description: habitData.description,
             category: habitData.category,
             icon_html: habitData.iconHtml,
             evaluation: habitData.evaluation,
-            unit: habitData.unit || '',
-            updated_at: new Date().toISOString()
-        }).eq('id', habitId).eq('user_id', session.user.id);
+            unit: habitData.unit || ''
+        });
     } catch (err) {
-        console.error('updateHabitInSupabase error:', err);
+        console.error('updateHabitInAPI error:', err);
     }
 }
 
-// --- Delete habits from Supabase ---
-async function deleteHabitsFromSupabase(habitIds) {
-    const client = getClient();
-    if (!client) return;
+// --- Delete habits from API ---
+async function deleteHabitsFromAPI(habitIds) {
+    if (!window.apiClient) return;
 
     try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) return;
-
-        await client.from('user_habits')
-            .delete()
-            .eq('user_id', session.user.id)
-            .in('id', habitIds);
+        await window.apiClient.delete('/habits', { ids: habitIds });
     } catch (err) {
-        console.error('deleteHabitsFromSupabase error:', err);
+        console.error('deleteHabitsFromAPI error:', err);
     }
 }
 
@@ -887,7 +842,7 @@ async function executeDeletion() {
     const idsToDelete = Array.from(_selectedIds);
     
     // Remove from Supabase first
-    await deleteHabitsFromSupabase(idsToDelete);
+    await deleteHabitsFromAPI(idsToDelete);
     
     // Remove from local cache
     habits = habits.filter(h => !_selectedIds.has(h.id));

@@ -2,7 +2,7 @@ PEMBANGUNAN APLIKASI HABIT TRACKER
 
 1. TUJUAN PROYEK
     - Membangun aplikasi habit tracker berbasis web yang dapat digunakan untuk melacak kebiasaan pengguna, yang bertujuan membangun kebiasaan kecil yang kecil namun konsisten dan continue.
-    - Menggunakan teknologi web modern (HTML, CSS, JavaScript, Tailwind CSS, Supabase).
+    - Menggunakan teknologi web modern (HTML, CSS, JavaScript, Tailwind CSS, Node.js, Express, MySQL).
     - Memiliki fitur-fitur berikut:
         - Autentikasi pengguna (login, register, logout).
         - Manajemen kebiasaan (tambah, edit, hapus, tandai selesai).
@@ -15,9 +15,11 @@ PEMBANGUNAN APLIKASI HABIT TRACKER
     - CSS
     - JavaScript
     - Tailwind CSS
-    - Supabase (database dan autentikasi)
+    - Node.js & Express (Backend Server)
+    - MySQL (Database)
 
 3. STRUKTUR PROYEK
+    - server/: Folder backend server Node.js.
     - index.html: Halaman utama (dashboard).
     - calendar.html: Halaman kalender.
     - statistics.html: Halaman statistik.
@@ -27,9 +29,12 @@ PEMBANGUNAN APLIKASI HABIT TRACKER
     - js/app.js: File JavaScript utama.
 
 4. CARA MENJALANKAN PROYEK
-    - Buka file index.html di browser.
-    - Login menggunakan akun Google atau email.
-    - Mulai lacak kebiasaan Anda!
+    - Pastikan MySQL server (XAMPP/WAMP) sudah berjalan.
+    - Buat database `habitflow` dan import dari `server/schema.sql`.
+    - Install dependencies backend dengan perintah `npm install`.
+    - Sesuaikan konfigurasi koneksi database di file `.env`.
+    - Jalankan server backend menggunakan `npm start`.
+    - Buka URL `http://localhost:3000/views/index.html` di browser.
 
 5. PENGEMBANG
     - Nama: [Syafiq Ahmad Annaufal]

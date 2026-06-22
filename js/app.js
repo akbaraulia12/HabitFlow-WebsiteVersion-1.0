@@ -1,9 +1,4 @@
-// Set up Supabase Client
-const SUPABASE_URL = 'https://loovtbdzjgpqamhssnue.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvb3Z0YmR6amdwcWFtaHNzbnVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDI3MTcsImV4cCI6MjA5MDc3ODcxN30.StgTqDRbsasnEq7gfnkF4P1bZTaV8pf3BmPIhUPFI4Q';
-// Ensure Supabase JS CDN is loaded in HTML before app.js
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
+// API Client is loaded from api.js
 // Initialize theme
 function initTheme() {
     const isAdminPage = window.location.pathname.toLowerCase().includes('admin_dashboard.html');
@@ -184,9 +179,9 @@ function initApp() {
         });
     });
     
-    // Setup Supabase Auth Listener
-    if (supabaseClient) {
-        setupAuthListener();
+    // Verify JWT Token
+    if (typeof verifyToken === 'function') {
+        verifyToken();
     }
 }
 
@@ -307,24 +302,31 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
-// --- Supabase Authentication Logic --- //
+// --- Authentication Logic --- //
 
-async function setupAuthListener() {
-    const { data: { session }, error } = await supabaseClient.auth.getSession();
-    handleRouteProtection(session);
-
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN') {
-            console.log('User signed in');
-            handleRouteProtection(session);
-        } else if (event === 'SIGNED_OUT') {
-            console.log('User signed out');
+async function verifyToken() {
+    if (typeof apiClient === 'undefined') return;
+    const token = apiClient.getToken();
+    
+    if (token) {
+        // Token exists, verify it
+        const { data, error } = await apiClient.get('/auth/me');
+        if (error) {
+            console.log('Invalid token, logging out');
+            apiClient.setToken(null);
+            localStorage.removeItem('currentUser');
             handleRouteProtection(null);
+        } else {
+            console.log('User verified');
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            handleRouteProtection(data.user);
         }
-    });
+    } else {
+        handleRouteProtection(null);
+    }
 }
 
-function handleRouteProtection(session) {
+function handleRouteProtection(user) {
     const currentPath = window.location.pathname.toLowerCase();
     const isPublicRoute = currentPath.includes('login.html') || currentPath.includes('register.html') || currentPath.includes('intro.html');
     const isAdminRoute = currentPath.includes('admin_dashboard.html');
@@ -337,11 +339,11 @@ function handleRouteProtection(session) {
         return;
     }
 
-    if (!session && !isPublicRoute && !isAdmin) {
+    if (!user && !isPublicRoute && !isAdmin) {
         // Not logged in and on protected page -> redirect to intro (or login if already seen)
         const introSeen = localStorage.getItem('introSeen') === 'true';
         window.location.href = introSeen ? 'login.html' : 'intro.html';
-    } else if (session && isPublicRoute) {
+    } else if (user && isPublicRoute) {
         // Logged in but on login/register/intro page -> redirect to index
         window.location.href = 'index.html';
     } else if (isAdmin && isPublicRoute) {
@@ -414,9 +416,9 @@ async function handleEmailLogin(event) {
         }
     }
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    const { data, error } = await window.apiClient.post('/auth/login', {
         email: email,
-        password: password,
+        password: password
     });
 
     if (error) {
@@ -446,6 +448,9 @@ async function handleEmailLogin(event) {
     } else {
         // Successful login — reset rate limiter
         if (typeof loginRateLimiter !== 'undefined') loginRateLimiter.reset();
+        window.apiClient.setToken(data.token);
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        window.location.href = 'index.html';
     }
 }
 
@@ -508,44 +513,25 @@ async function handleEmailRegister(event) {
     const email = emailRaw.trim();
     const password = passwordRaw;
 
-    const { data, error } = await supabaseClient.auth.signUp({
+    const { data, error } = await window.apiClient.post('/auth/register', {
         email: email,
         password: password,
-        options: {
-            data: {
-                full_name: name,
-                username: username
-            }
-        }
+        full_name: name,
+        username: username
     });
 
     if (error) {
-        showToast("Registration failed: " + error.message, 'error');
-        btn.innerText = originalText;
-        btn.disabled = false;
-    } else if (data.user && !data.session) {
-        // Supabase returns user but no session when email already exists (repeated signup)
-        // or when email confirmation is pending
-        showToast("This email is already registered. Please log in or use 'Forgot Password'.", 'error');
-        btn.innerText = originalText;
-        btn.disabled = false;
-        setTimeout(() => window.location.href = 'login.html', 2000);
-    } else {
-        // Successful registration — user is auto-confirmed
-        if (data.user) {
-            try {
-                await supabaseClient
-                    .from('profiles')
-                    .upsert({
-                        id: data.user.id,
-                        full_name: name,
-                        username: username,
-                        email: email
-                    }, { onConflict: 'id' });
-            } catch (profileErr) {
-                console.error('Profile save error:', profileErr);
-            }
+        if (error.message && error.message.includes('User already exists')) {
+            showToast("This email is already registered. Please log in.", 'error');
+            btn.innerText = originalText;
+            btn.disabled = false;
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        } else {
+            showToast("Registration failed: " + error.message, 'error');
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
+    } else {
         showToast('Account created successfully! Please log in.');
         btn.innerText = originalText;
         btn.disabled = false;
@@ -566,7 +552,8 @@ async function handleSignOut() {
                 document.body.style.opacity = '0';
                 document.body.style.transition = 'opacity 0.5s ease';
                 localStorage.removeItem('isAdmin');
-                await supabaseClient.auth.signOut();
+                localStorage.removeItem('currentUser');
+                if (window.apiClient) window.apiClient.setToken(null);
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Logout error:', error);

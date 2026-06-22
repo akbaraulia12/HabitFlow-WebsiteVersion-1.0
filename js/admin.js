@@ -45,36 +45,15 @@ function switchTab(tabId) {
 
 async function fetchAllStats() {
     try {
-        if (!supabaseClient) return;
+        if (!window.apiClient) return;
 
-        // Total Users
-        const { count: userCount, error: userErr } = await supabaseClient
-            .from('profiles')
-            .select('*', { count: 'exact', head: true });
-            
-        // Total Habits
-        const { count: habitCount, error: habitErr } = await supabaseClient
-            .from('user_habits')
-            .select('*', { count: 'exact', head: true });
+        const { data, error } = await window.apiClient.get('/admin/stats');
+        if (error) throw error;
 
-        // Total Feedback & Avg Rating
-        const { data: feedbackData, error: feedbackErr } = await supabaseClient
-            .from('user_experience')
-            .select('rating');
-
-        document.getElementById('stat-total-users').innerText = userErr ? '0' : userCount;
-        document.getElementById('stat-total-habits').innerText = habitErr ? '0' : habitCount;
-        
-        if (feedbackData && !feedbackErr) {
-            document.getElementById('stat-total-feedback').innerText = feedbackData.length;
-            const avg = feedbackData.length > 0 
-                ? (feedbackData.reduce((acc, curr) => acc + curr.rating, 0) / feedbackData.length).toFixed(1)
-                : '0.0';
-            document.getElementById('stat-avg-rating').innerText = avg + ' / 5';
-        } else {
-            document.getElementById('stat-total-feedback').innerText = '0';
-            document.getElementById('stat-avg-rating').innerText = '0.0';
-        }
+        document.getElementById('stat-total-users').innerText = data.userCount || '0';
+        document.getElementById('stat-total-habits').innerText = data.habitCount || '0';
+        document.getElementById('stat-total-feedback').innerText = data.feedbackCount || '0';
+        document.getElementById('stat-avg-rating').innerText = data.avgRating + ' / 5';
 
     } catch (error) {
         console.error('Error fetching stats:', error);
@@ -86,10 +65,7 @@ async function fetchUsers() {
     tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-[var(--text-muted)]"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users...</td></tr>`;
 
     try {
-        const { data, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await window.apiClient.get('/admin/users');
 
         if (error) throw error;
 
@@ -116,7 +92,7 @@ async function fetchUsers() {
                 </td>
                 <td class="p-5 text-[var(--text-muted)] align-middle">${user.email || 'N/A'}</td>
                 <td class="p-5 text-right align-middle">
-                    <button class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" onclick="deleteRecord('profiles', '${user.id}', fetchUsers)" title="Delete User">
+                    <button class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" onclick="deleteRecord('users', '${user.id}', fetchUsers)" title="Delete User">
                         <i class="fa-solid fa-trash text-xs"></i>
                     </button>
                 </td>
@@ -134,10 +110,7 @@ async function fetchHabits() {
     tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-[var(--text-muted)]"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading habits...</td></tr>`;
 
     try {
-        const { data, error } = await supabaseClient
-            .from('user_habits')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await window.apiClient.get('/admin/habits');
 
         if (error) throw error;
 
@@ -187,10 +160,7 @@ async function fetchFeedback() {
     tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-[var(--text-muted)]"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading feedback...</td></tr>`;
 
     try {
-        const { data, error } = await supabaseClient
-            .from('user_experience')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await window.apiClient.get('/admin/feedback');
 
         if (error) throw error;
 
@@ -237,7 +207,7 @@ async function fetchFeedback() {
 async function deleteRecord(table, id, refreshCallback) {
     if (confirm(`Are you sure you want to delete this record from ${table}? This cannot be undone.`)) {
         try {
-            const { error } = await supabaseClient.from(table).delete().eq('id', id);
+            const { error } = await window.apiClient.delete(`/admin/${table}/${id}`);
             if (error) throw error;
             showToast('Record deleted successfully');
             
