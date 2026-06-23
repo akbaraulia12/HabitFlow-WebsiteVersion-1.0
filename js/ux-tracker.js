@@ -128,6 +128,14 @@ class UXTracker {
     }
 
     _flushData() {
+        // Log accumulated interactions and scroll depth before leaving
+        if (this.interactions > 0) {
+            this.logMetric('total_clicks', this.interactions);
+        }
+        if (this.maxScroll > 0) {
+            this.logMetric('max_scroll_depth', `${this.maxScroll}%`);
+        }
+
         // Push remaining metrics
         if (this.metrics.length > 0) {
             fetch(`${API_BASE_URL}/ux/metrics`, {

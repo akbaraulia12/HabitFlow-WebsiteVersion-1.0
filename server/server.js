@@ -33,6 +33,10 @@ app.use('/api/ux', uxRoutes);
 //     res.sendFile(path.join(__dirname, '../views/index.html'));
 // });
 
+// Initialize automated data cleanup
+const { initRetentionPolicy } = require('./utils/retentionPolicy');
+initRetentionPolicy();
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -9,13 +9,15 @@ function initTheme() {
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: savedTheme } }));
     } else {
-        // User theme handling (defaults to light/green, forces out of dark)
+        // User theme handling (defaults to light, supports dark)
         let savedTheme = localStorage.getItem('theme') || 'light';
-        if (savedTheme === 'dark') {
+        if (savedTheme === 'blue' || savedTheme === 'green') {
             savedTheme = 'light';
             localStorage.setItem('theme', 'light');
         }
         document.documentElement.setAttribute('data-theme', savedTheme);
+        // Apply immediately on load
+        applyThemeToPage(savedTheme);
         setupBackgroundGradient(savedTheme);
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: savedTheme } }));
     }
@@ -76,17 +78,25 @@ function toggleTheme() {
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
     } else {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        let newTheme;
-        if (currentTheme === 'light' || currentTheme === 'green') {
-            newTheme = 'blue';
-        } else {
-            newTheme = 'green';
-        }
+        let newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        updateGradientColor(newTheme);
+        applyThemeToPage(newTheme);
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
     }
+}
+
+// Apply visual theme changes to the page
+function applyThemeToPage(theme) {
+    const mainWrapper = document.querySelector('.main-content-wrapper');
+    if (mainWrapper) {
+        if (theme === 'dark') {
+            mainWrapper.style.backgroundColor = '#0F172A';
+        } else {
+            mainWrapper.style.backgroundColor = '';
+        }
+    }
+    updateGradientColor(theme);
 }
 
 // Ripple effect for interactive elements
