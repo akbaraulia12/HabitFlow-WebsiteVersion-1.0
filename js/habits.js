@@ -272,7 +272,14 @@ function renderHomeHabits() {
     const container = document.getElementById('habit-list');
     if (!container) return;
 
-    const habits = getHabits();
+    let habits = getHabits();
+    
+    const searchInput = document.getElementById('habit-search-input');
+    if (searchInput && searchInput.value.trim() !== '') {
+        const query = searchInput.value.toLowerCase().trim();
+        habits = habits.filter(h => h.name && h.name.toLowerCase().includes(query));
+    }
+
     const today = new Date().toISOString().slice(0, 10);
 
     if (habits.length === 0) {
