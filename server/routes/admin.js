@@ -16,11 +16,19 @@ router.get('/stats', auth, async (req, res) => {
             ? (feedbackRows.reduce((acc, curr) => acc + curr.rating, 0) / feedbackCount).toFixed(1)
             : '0.0';
 
+        const [metricRows] = await pool.query('SELECT metric_type, COUNT(*) as count FROM ux_metrics GROUP BY metric_type');
+        const [sessionRows] = await pool.query('SELECT COUNT(*) as total_sessions, AVG(total_duration) as avg_duration FROM ux_sessions');
+
         res.json({
             userCount: userCountRows[0].count,
             habitCount: habitCountRows[0].count,
             feedbackCount,
-            avgRating
+            avgRating,
+            metrics: metricRows,
+            sessions: {
+                total: sessionRows[0].total_sessions || 0,
+                avgDuration: sessionRows[0].avg_duration ? Math.round(sessionRows[0].avg_duration) : 0
+            }
         });
     } catch (err) {
         console.error(err.message);

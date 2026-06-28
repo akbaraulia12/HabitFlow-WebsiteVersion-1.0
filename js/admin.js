@@ -14,28 +14,39 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Admin specific logout (since frontend bypass was used)
-function handleAdminLogout() {
+function handleAdminLogout(e) {
+    e.preventDefault();
     localStorage.removeItem('isAdmin');
     window.location.href = 'login.html';
 }
 
-// Tab switching logic
 function switchTab(tabId) {
-    // Hide all contents
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    
-    // Remove active styling from all nav items
-    document.querySelectorAll('.admin-nav-item').forEach(el => {
-        el.className = 'admin-nav-item relative overflow-hidden flex items-center gap-3 px-5 py-3.5 rounded-xl text-[var(--text-muted)] hover:text-white hover:bg-[var(--primary)] font-medium transition-all group';
+    // Hide all contents and remove animation
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('animate-fade-in');
     });
     
-    // Show selected content
-    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    // Remove active styling from all nav items safely
+    document.querySelectorAll('.admin-nav-item').forEach(el => {
+        el.classList.remove('bg-[var(--primary)]', 'text-white', 'font-semibold', 'shadow-lg', 'shadow-primary/30');
+        el.classList.add('text-[var(--text-muted)]', 'font-medium');
+    });
     
-    // Add active styling to selected nav item
+    // Show selected content and restart animation
+    const selectedContent = document.getElementById(`tab-${tabId}`);
+    if (selectedContent) {
+        selectedContent.classList.remove('hidden');
+        // Force browser reflow to restart the fade-in animation
+        void selectedContent.offsetWidth;
+        selectedContent.classList.add('animate-fade-in');
+    }
+    
+    // Add active styling to selected nav item safely
     const navBtn = document.getElementById(`nav-${tabId}`);
     if (navBtn) {
-        navBtn.className = 'admin-nav-item relative overflow-hidden flex items-center gap-3 px-5 py-3.5 rounded-xl bg-[var(--primary)] text-white font-semibold shadow-lg shadow-primary/30 transition-all group';
+        navBtn.classList.remove('text-[var(--text-muted)]', 'font-medium');
+        navBtn.classList.add('bg-[var(--primary)]', 'text-white', 'font-semibold', 'shadow-lg', 'shadow-primary/30');
     }
 }
 
@@ -54,6 +65,24 @@ async function fetchAllStats() {
         document.getElementById('stat-total-habits').innerText = data.habitCount || '0';
         document.getElementById('stat-total-feedback').innerText = data.feedbackCount || '0';
         document.getElementById('stat-avg-rating').innerText = data.avgRating + ' / 5';
+
+        // Add UX stats processing here
+        if (data.sessions) {
+            document.getElementById('stat-ux-total-sessions').innerText = data.sessions.total || '0';
+            document.getElementById('stat-ux-avg-duration').innerText = data.sessions.avgDuration || '0';
+        }
+        
+        if (data.metrics && data.metrics.length > 0) {
+            const metricsContainer = document.getElementById('stat-ux-metrics-container');
+            metricsContainer.innerHTML = data.metrics.map(m => `
+                <div class="flex justify-between items-center border-b border-[var(--border-color)] pb-2 last:border-0">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">${m.metric_type.replace(/_/g, ' ')}</span>
+                    <span class="px-2.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold rounded-md">${m.count}</span>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('stat-ux-metrics-container').innerHTML = '<div class="text-center text-[var(--text-muted)] text-sm py-2">No metrics recorded yet</div>';
+        }
 
     } catch (error) {
         console.error('Error fetching stats:', error);
@@ -77,7 +106,7 @@ async function fetchUsers() {
         tbody.innerHTML = data.map(user => `
             <tr class="hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-all group">
                 <td class="p-5 font-mono text-xs text-gray-500 dark:text-gray-400 align-middle">
-                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">${user.id.substring(0, 8)}...</span>
+                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">${String(user.id).substring(0, 8)}...</span>
                 </td>
                 <td class="p-5 align-middle">
                     <div class="flex items-center gap-3">
@@ -91,11 +120,6 @@ async function fetchUsers() {
                     </div>
                 </td>
                 <td class="p-5 text-[var(--text-muted)] align-middle">${user.email || 'N/A'}</td>
-                <td class="p-5 text-right align-middle">
-                    <button class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" onclick="deleteRecord('users', '${user.id}', fetchUsers)" title="Delete User">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                </td>
             </tr>
         `).join('');
 
@@ -138,14 +162,9 @@ async function fetchHabits() {
                     </span>
                 </td>
                 <td class="p-5 font-mono text-xs text-gray-500 dark:text-gray-400 align-middle">
-                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">${habit.user_id.substring(0, 8)}...</span>
+                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">${String(habit.user_id).substring(0, 8)}...</span>
                 </td>
                 <td class="p-5 text-[var(--text-muted)] text-sm font-medium align-middle">${dateStr}</td>
-                <td class="p-5 text-right align-middle">
-                    <button class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" onclick="deleteRecord('user_habits', '${habit.id}', fetchHabits)" title="Delete Habit">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                </td>
             </tr>
         `}).join('');
 
@@ -189,11 +208,6 @@ async function fetchFeedback() {
                     </span>
                 </td>
                 <td class="p-5 text-[var(--text-muted)] text-xs font-medium align-top pt-6">${dateStr}</td>
-                <td class="p-5 text-right align-top pt-5">
-                    <button class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100" onclick="deleteRecord('user_experience', '${fb.id}', fetchFeedback)" title="Delete Feedback">
-                        <i class="fa-solid fa-trash text-xs"></i>
-                    </button>
-                </td>
             </tr>
         `}).join('');
 
@@ -203,20 +217,4 @@ async function fetchFeedback() {
     }
 }
 
-// Global Delete Function (requires RLS policies on Supabase to allow delete)
-async function deleteRecord(table, id, refreshCallback) {
-    if (confirm(`Are you sure you want to delete this record from ${table}? This cannot be undone.`)) {
-        try {
-            const { error } = await window.apiClient.delete(`/admin/${table}/${id}`);
-            if (error) throw error;
-            showToast('Record deleted successfully');
-            
-            // Refresh stats and specific table
-            fetchAllStats();
-            refreshCallback();
-        } catch (error) {
-            console.error('Delete error:', error);
-            alert('Failed to delete: ' + error.message);
-        }
-    }
-}
+
